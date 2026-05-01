@@ -1,13 +1,8 @@
-console.log("99frelas content.js carregou");
-
-function wait(ms) {
-  return new Promise(function(resolve) {
-    setTimeout(resolve, ms);
-  });
-}
+console.log("99freelas content.js carregou");
 
 function extractDays(text) {
   if (!text) return 999;
+
   text = text.toLowerCase();
 
   if (text.indexOf("hora") !== -1) return 0;
@@ -20,6 +15,7 @@ function extractDays(text) {
 
 function isWordPress(skills, description, title) {
   var text = (skills + " " + description + " " + title).toLowerCase();
+
   return (
     text.indexOf("wordpress") !== -1 ||
     text.indexOf("wix") !== -1 ||
@@ -29,6 +25,43 @@ function isWordPress(skills, description, title) {
 
 function isViewed(project) {
   return !!project.querySelector(".icon-eye");
+}
+
+function isProjectsListPage(url) {
+  try {
+    return new URL(url).pathname === "/projects";
+  } catch (e) {
+    return url.indexOf("/projects") !== -1;
+  }
+}
+
+function isMessagePage(url) {
+  return url.indexOf("/project/message/") !== -1;
+}
+
+function isProjectDetailsPage(url) {
+  return url.indexOf("/project/") !== -1 && !isMessagePage(url);
+}
+
+async function maybeReturnToProjectsList() {
+  var data = await chrome.storage.local.get([
+    "running",
+    "returnAfterSubmit"
+  ]);
+
+  if (!data.running || !data.returnAfterSubmit) return false;
+
+  var currentUrl = window.location.href;
+
+  if (isMessagePage(currentUrl)) return false;
+
+  if (currentUrl === data.returnAfterSubmit) {
+    await chrome.storage.local.remove("returnAfterSubmit");
+    return false;
+  }
+
+  window.location.href = data.returnAfterSubmit;
+  return true;
 }
 
 async function generateMessage(apiKey, project) {
@@ -46,9 +79,9 @@ async function generateMessage(apiKey, project) {
             role: "user",
             content:
               "Crie uma mensagem curta, natural e personalizada para este projeto freelance.\n\n" +
-              "Título: " + project.title + "\n" +
-              "Descrição: " + project.description + "\n\n" +
-              "A mensagem deve ser humana, natural, mostrar experiência similar e terminar pedindo conversa."
+              "Titulo: " + project.title + "\n" +
+              "Descricao: " + project.description + "\n\n" +
+              "A mensagem deve ser humana, natural, mostrar experiencia similar e terminar pedindo conversa."
           }
         ],
         temperature: 0.7
@@ -58,7 +91,10 @@ async function generateMessage(apiKey, project) {
     var data = await res.json();
 
     if (!res.ok) {
-      alert("Erro OpenAI: " + ((data.error && data.error.message) || "Erro desconhecido"));
+      alert(
+        "Erro OpenAI: " +
+        ((data.error && data.error.message) || "Erro desconhecido")
+      );
       return "";
     }
 
@@ -98,7 +134,9 @@ async function startAutomation() {
   }
 
   var processedSet = new Set(processed);
-  var projects = Array.prototype.slice.call(document.querySelectorAll("li.result-item"));
+  var projects = Array.prototype.slice.call(
+    document.querySelectorAll("li.result-item")
+  );
 
   for (var i = 0; i < projects.length; i++) {
     var state = await chrome.storage.local.get("running");
@@ -129,7 +167,7 @@ async function startAutomation() {
 
     if (days > maxDays) {
       await chrome.storage.local.set({ running: false });
-      alert("Automação finalizada.");
+      alert("Automacao finalizada.");
       return;
     }
 
@@ -171,7 +209,7 @@ async function startAutomation() {
   }
 
   await chrome.storage.local.set({ running: false });
-  alert("Automação finalizada. Não há mais páginas.");
+  alert("Automacao finalizada. Nao ha mais paginas.");
 }
 
 async function handleProjectPage() {
@@ -217,10 +255,13 @@ async function handleMessagePage() {
       returnUrlData.lastListUrl ||
       "https://www.99freelas.com.br/projects?categoria=web-mobile-e-software";
 
-    await chrome.storage.local.remove("pendingProject");
-
-    var approved = confirm("A mensagem foi revisada e está pronta para envio?");
+    var approved = confirm("A mensagem foi revisada e esta pronta para envio?");
     if (!approved) return;
+
+    await chrome.storage.local.set({
+      returnAfterSubmit: returnUrl
+    });
+    await chrome.storage.local.remove("pendingProject");
 
     submitBtn.click();
 
@@ -230,26 +271,27 @@ async function handleMessagePage() {
   }, 2000);
 }
 
-(function() {
+(async function() {
   console.log("Entrou no roteador");
 
   var url = window.location.href;
   console.log("URL atual:", url);
 
-  if (url.indexOf("/projects?") !== -1) {
+  if (await maybeReturnToProjectsList()) {
+    return;
+  }
+
+  if (isProjectsListPage(url)) {
     startAutomation();
     return;
   }
 
-  if (
-    url.indexOf("/project/") !== -1 &&
-    url.indexOf("/project/message/") === -1
-  ) {
+  if (isProjectDetailsPage(url)) {
     handleProjectPage();
     return;
   }
 
-  if (url.indexOf("/project/message/") !== -1) {
+  if (isMessagePage(url)) {
     handleMessagePage();
   }
 })();
