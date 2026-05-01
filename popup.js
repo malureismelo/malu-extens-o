@@ -24,3 +24,7 @@ document.getElementById("stop").addEventListener("click", () => {
     statusEl.textContent = "Parado";
   });
 });
+
+document.getElementById("openSettings").addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
+});

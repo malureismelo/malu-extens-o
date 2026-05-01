@@ -64,8 +64,15 @@ async function maybeReturnToProjectsList() {
   return true;
 }
 
-async function generateMessage(apiKey, project) {
+async function generateMessage(apiKey, customPrompt, project) {
   try {
+    var prompt =
+      (customPrompt ||
+        "Crie uma mensagem curta, natural e personalizada para este projeto freelance.") +
+      "\n\n" +
+      "Titulo: " + project.title + "\n" +
+      "Descricao: " + project.description;
+
     var res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -77,11 +84,7 @@ async function generateMessage(apiKey, project) {
         messages: [
           {
             role: "user",
-            content:
-              "Crie uma mensagem curta, natural e personalizada para este projeto freelance.\n\n" +
-              "Titulo: " + project.title + "\n" +
-              "Descricao: " + project.description + "\n\n" +
-              "A mensagem deve ser humana, natural, mostrar experiencia similar e terminar pedindo conversa."
+            content: prompt
           }
         ],
         temperature: 0.7
@@ -233,7 +236,8 @@ async function handleMessagePage() {
   var data = await chrome.storage.local.get([
     "running",
     "pendingProject",
-    "apiKey"
+    "apiKey",
+    "customPrompt"
   ]);
 
   if (!data.running || !data.pendingProject || !data.apiKey) return;
@@ -244,7 +248,11 @@ async function handleMessagePage() {
 
     if (!textarea || !submitBtn) return;
 
-    var message = await generateMessage(data.apiKey, data.pendingProject);
+    var message = await generateMessage(
+      data.apiKey,
+      data.customPrompt,
+      data.pendingProject
+    );
     if (!message) return;
 
     textarea.value = message;

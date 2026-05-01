@@ -1,8 +1,110 @@
-<h2>Configurações</h2>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuracoes</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #101827;
+      color: #f3f4f6;
+    }
 
-<label>OpenAI API Key</label>
-<input id="apiKey" type="password" />
+    .page {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
 
-<button id="save">Salvar</button>
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
 
-<script src="options.js"></script>
+    p {
+      margin: 0 0 24px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      border: 1px solid #4b5563;
+      border-radius: 10px;
+      box-sizing: border-box;
+      background: #0f172a;
+      color: #f9fafb;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .hint {
+      margin-top: -10px;
+      margin-bottom: 18px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 12px 18px;
+      background: #22c55e;
+      color: #04130a;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-left: 12px;
+      color: #bfdbfe;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>Configuracoes</h1>
+    <p>Defina a chave da API e o prompt base. No envio, a extensao acrescenta automaticamente o titulo e a descricao do projeto.</p>
+
+    <section class="card">
+      <label for="apiKey">OpenAI API Key</label>
+      <input id="apiKey" type="password" placeholder="sk-..." />
+
+      <label for="customPrompt">Prompt base</label>
+      <textarea id="customPrompt" placeholder="Ex.: Escreva uma proposta curta, natural, profissional e personalizada para este projeto."></textarea>
+      <div class="hint">A descricao do projeto sera adicionada automaticamente junto com o titulo.</div>
+
+      <button id="save">Salvar</button>
+      <span id="status"></span>
+    </section>
+  </main>
+
+  <script src="options.js"></script>
+</body>
+</html>
