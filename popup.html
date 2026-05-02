@@ -3,15 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Primeira Extensão da Malu</title>
+  <title>Primeira Extensao da Malu</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="container">
-    <h3>Primeira Extensão da Malu</h3>
+    <h3>Primeira Extensao da Malu</h3>
 
-    <label for="days">Projetos publicados até (dias)</label>
+    <label for="days">Projetos publicados ate (dias)</label>
     <input id="days" type="number" min="0" value="2">
+
+    <label class="toggle-row" for="autoMode">
+      <span>Modo automatico</span>
+      <span class="toggle-control">
+        <input id="autoMode" type="checkbox">
+        <span class="toggle-slider"></span>
+      </span>
+    </label>
+    <p class="hint">Envia sem confirmacao e sem alertas do fluxo.</p>
 
     <button id="start">Ligar</button>
     <button id="stop">Desligar</button>

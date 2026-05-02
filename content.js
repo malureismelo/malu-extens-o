@@ -129,6 +129,29 @@ function buildPageUrl(pageNumber) {
   return url.toString();
 }
 
+async function isAutoModeEnabled() {
+  var data = await chrome.storage.local.get("autoMode");
+  return !!data.autoMode;
+}
+
+async function notifyUser(message) {
+  if (await isAutoModeEnabled()) {
+    console.log(message);
+    return;
+  }
+
+  alert(message);
+}
+
+async function requestApproval(message) {
+  if (await isAutoModeEnabled()) {
+    console.log("Modo automatico ativo, confirmacao ignorada.");
+    return true;
+  }
+
+  return confirm(message);
+}
+
 function findNextPageNumber() {
   var selectedEl = document.querySelector(
     ".pagination-component .page-item.selected[data-page]"
@@ -163,7 +186,7 @@ function findNextPageNumber() {
 async function finishAutomation(message) {
   await chrome.storage.local.set({ running: false });
   await chrome.storage.local.remove(["pendingProject", "returnAfterSubmit"]);
-  alert(message);
+  await notifyUser(message);
 }
 
 async function maybeReturnToProjectsList() {
@@ -283,7 +306,7 @@ async function generateMessage(apiKey, customPrompt, project) {
     var data = await res.json();
 
     if (!res.ok) {
-      alert(
+      await notifyUser(
         "Erro OpenAI: " +
         ((data.error && data.error.message) || "Erro desconhecido")
       );
@@ -298,7 +321,7 @@ async function generateMessage(apiKey, customPrompt, project) {
     ) || "";
   } catch (e) {
     console.error("Erro OpenAI:", e);
-    alert("Erro ao conectar com OpenAI.");
+    await notifyUser("Erro ao conectar com OpenAI.");
     return "";
   }
 }
@@ -322,7 +345,8 @@ async function startAutomation() {
   if (!running) return;
 
   if (!apiKey) {
-    alert("Defina sua OpenAI API Key.");
+    await chrome.storage.local.set({ running: false });
+    await notifyUser("Defina sua OpenAI API Key.");
     return;
   }
 
@@ -463,7 +487,12 @@ async function handleMessagePage() {
       data.customPrompt,
       data.pendingProject
     );
-    if (!message) return;
+    if (!message) {
+      await finishAutomation(
+        "Automacao interrompida. Nao foi possivel gerar a mensagem."
+      );
+      return;
+    }
 
     textarea.value = message;
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
@@ -473,7 +502,9 @@ async function handleMessagePage() {
       returnUrlData.lastListUrl ||
       "https://www.99freelas.com.br/projects?categoria=web-mobile-e-software";
 
-    var approved = confirm("A mensagem foi revisada e esta pronta para envio?");
+    var approved = await requestApproval(
+      "A mensagem foi revisada e esta pronta para envio?"
+    );
     if (!approved) return;
 
     await chrome.storage.local.set({
