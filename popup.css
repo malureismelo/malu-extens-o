@@ -51,6 +51,11 @@ button {
   color: white;
 }
 
+#openSettings {
+  background: #3b82f6;
+  color: white;
+}
+
 #status {
   margin-top: 12px;
   font-size: 12px;

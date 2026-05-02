@@ -3,7 +3,7 @@ const daysEl = document.getElementById("days");
 
 chrome.storage.local.get(["running", "maxDays"], (res) => {
   statusEl.textContent = res.running ? "Rodando" : "Parado";
-  if (res.maxDays) daysEl.value = res.maxDays;
+  if (typeof res.maxDays === "number") daysEl.value = res.maxDays;
 });
 
 document.getElementById("start").addEventListener("click", () => {
@@ -23,4 +23,8 @@ document.getElementById("stop").addEventListener("click", () => {
   }, () => {
     statusEl.textContent = "Parado";
   });
+});
+
+document.getElementById("openSettings").addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
 });
