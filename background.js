@@ -23,6 +23,16 @@ function normalizeProjectsUrl(url) {
   }
 }
 
+function buildRestartUrl(url) {
+  try {
+    var parsedUrl = new URL(url || DEFAULT_PROJECTS_URL);
+    parsedUrl.searchParams.set("page", "1");
+    return parsedUrl.toString();
+  } catch (e) {
+    return DEFAULT_PROJECTS_URL;
+  }
+}
+
 function isProjectsListUrl(url) {
   try {
     return new URL(url).pathname === "/projects";
@@ -110,7 +120,7 @@ async function restartAutomationCycle() {
     return;
   }
 
-  var restartUrl = normalizeProjectsUrl(data.automationBaseUrl);
+  var restartUrl = buildRestartUrl(data.automationBaseUrl);
   var tab = await resolveAutomationTab(restartUrl);
 
   await chrome.storage.local.set({
@@ -119,7 +129,7 @@ async function restartAutomationCycle() {
     scheduledRestartAt: null,
     pendingProject: null,
     returnAfterSubmit: null,
-    automationBaseUrl: restartUrl
+    automationBaseUrl: normalizeProjectsUrl(restartUrl)
   });
 
   if (tab) {
