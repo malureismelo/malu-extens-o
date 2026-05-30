@@ -129,6 +129,12 @@ function buildPageUrl(pageNumber) {
   return url.toString();
 }
 
+function getBaseProjectsUrl(url) {
+  var parsedUrl = new URL(url);
+  parsedUrl.searchParams.delete("page");
+  return parsedUrl.toString();
+}
+
 async function isAutoModeEnabled() {
   var data = await chrome.storage.local.get("autoMode");
   return !!data.autoMode;
@@ -150,6 +156,19 @@ async function requestApproval(message) {
   }
 
   return confirm(message);
+}
+
+async function incrementCycleSentCount() {
+  var data = await chrome.storage.local.get("cycleSentCount");
+  var currentCount =
+    typeof data.cycleSentCount === "number" ? data.cycleSentCount : 0;
+  var nextCount = currentCount + 1;
+
+  await chrome.storage.local.set({
+    cycleSentCount: nextCount
+  });
+
+  return nextCount;
 }
 
 function findNextPageNumber() {
@@ -183,9 +202,27 @@ function findNextPageNumber() {
   return nextPageNumber;
 }
 
-async function finishAutomation(message) {
+async function finishAutomation(message, options) {
+  var finishOptions = options || {};
+  var data = await chrome.storage.local.get("cycleSentCount");
+  var sentCount =
+    typeof data.cycleSentCount === "number" ? data.cycleSentCount : 0;
+
   await chrome.storage.local.set({ running: false });
   await chrome.storage.local.remove(["pendingProject", "returnAfterSubmit"]);
+
+  if (finishOptions.cycleComplete) {
+    try {
+      await chrome.runtime.sendMessage({
+        type: "CYCLE_COMPLETE",
+        sentCount: sentCount,
+        baseUrl: getBaseProjectsUrl(window.location.href)
+      });
+    } catch (e) {
+      console.error("Erro ao avisar fim do ciclo:", e);
+    }
+  }
+
   await notifyUser(message);
 }
 
@@ -350,6 +387,19 @@ async function startAutomation() {
     return;
   }
 
+  await chrome.storage.local.set({
+    automationBaseUrl: getBaseProjectsUrl(window.location.href)
+  });
+
+  try {
+    await chrome.runtime.sendMessage({
+      type: "REGISTER_AUTOMATION_TAB",
+      baseUrl: getBaseProjectsUrl(window.location.href)
+    });
+  } catch (e) {
+    console.error("Erro ao registrar aba da automacao:", e);
+  }
+
   var shouldContinue = await scrollToLoadProjects();
   if (!shouldContinue) return;
 
@@ -427,14 +477,16 @@ async function startAutomation() {
     }
 
     await finishAutomation(
-      "Automacao finalizada. Todos os projetos dentro do limite ja foram vistos ou processados e nao ha proxima pagina."
+      "Automacao finalizada. Todos os projetos dentro do limite ja foram vistos ou processados e nao ha proxima pagina.",
+      { cycleComplete: true }
     );
     return;
   }
 
   if (projects.length > 0) {
     await finishAutomation(
-      "Automacao finalizada. Nenhum projeto desta pagina esta dentro do limite de dias escolhido."
+      "Automacao finalizada. Nenhum projeto desta pagina esta dentro do limite de dias escolhido.",
+      { cycleComplete: true }
     );
     return;
   }
@@ -445,7 +497,8 @@ async function startAutomation() {
   }
 
   await finishAutomation(
-    "Automacao finalizada. Nao foi possivel encontrar mais projetos ou paginas."
+    "Automacao finalizada. Nao foi possivel encontrar mais projetos ou paginas.",
+    { cycleComplete: true }
   );
 }
 
@@ -506,6 +559,8 @@ async function handleMessagePage() {
       "A mensagem foi revisada e esta pronta para envio?"
     );
     if (!approved) return;
+
+    await incrementCycleSentCount();
 
     await chrome.storage.local.set({
       returnAfterSubmit: returnUrl

@@ -6,7 +6,10 @@
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "notifications",
+    "alarms",
+    "tabs"
   ],
   "host_permissions": [
     "https://www.99freelas.com.br/*",
